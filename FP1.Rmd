@@ -1,0 +1,120 @@
+---
+title: "FP1"
+output: html_document
+---
+
+# Psych Data project
+
+```{r}
+install.packages("data.table")
+```
+# Research questions: 1. How is repeated exposure to extremist content related to changes in the language and behavior of users over time 2. How do major political or social events affect online indicators associated with radicalization, such as perceived threat, out-group hostility, and engagement with extremist content? 3. Are people who engage with extremist content more likely to move into more extreme online communities over time?
+
+
+## DATASET 1 Incel reddit scrape
+
+```{r}
+library(data.table)
+
+incels_test <- fread(
+  "~/Downloads/incels.is_AllComments.anon",
+  sep = "\t",
+  nrows = 1000
+)
+
+names(incels_test)
+str(incels_test)
+```
+
+```{r}
+summary(incels_test)
+```
+```{r}
+table(incels_test$parent == "")
+table(incels_test$title == "")
+```
+```{r}
+length(unique(incels_test$`924978982.463397`))
+```
+
+```{r}
+user_counts <- incels_test[, .N, by = `924978982.463397`]
+
+summary(user_counts$N)
+```
+
+```{r}
+head(user_counts[order(-N)], 20)
+```
+
+```{r}
+incels <- fread(
+  "~/Downloads/incels.is_AllComments.anon",
+  sep = "\t"
+)
+```
+
+```{r}
+setnames(
+  incels,
+  old = "924978982.463397",
+  new = "user"
+)
+```
+
+```{r}
+incels_clean <- incels[
+  !is.na(text) & trimws(text) != ""
+]
+```
+
+```{r}
+sum(duplicated(incels_clean$text))
+```
+```{r}
+incels_clean <- unique(incels_clean)
+```
+
+###a) 
+Public comments from Incels.is, an online discussion forum. The dataset consists of scraped public posts/comments and includes anonymized user IDs, timestamps, thread information, and comment text. Similar Incels.is datasets have been collected by researchers using web-scraping methods.
+###b)
+The dataset contains public posts and comments from users of the Incels.is discussion forum. Each row represents an individual post/comment. Users are represented by anonymized identifiers, allowing patterns of activity to be examined without using usernames. The data capture when and where a comment was posted, its position within a conversation, and its textual content.
+###c)
+There are a few data limitations. First of all, the people posting on Incels.is aren't necessarily representative of everyone who identifies as an incel. The people posting on Incels.is aren't necessarily representative of everyone who identifies as an incel. I do not have information on You don't appear to have things like: age, geographic location, education, socioeconomic status, mental health history, relationship history. Text doesn't directly measure psychological states, this is especially important for your psychology angle. And finally there are some meaningful missing values.
+###d)
+link
+comment_id
+user
+parent
+timestamp
+title
+text
+###e)
+```{r}
+incels[, date := as.POSIXct(timestamp, origin = "1970-01-01", tz = "UTC")]
+
+incels[, month := format(date, "%Y-%m")]
+
+monthly_comments <- incels[
+  !is.na(text) & trimws(text) != "",
+  .N,
+  by = month
+]
+```
+
+```{r}
+library(ggplot2)
+
+ggplot(monthly_comments, aes(x = month, y = N)) +
+  geom_col() +
+  labs(
+    title = "Number of Incels.is Comments Over Time",
+    x = "Month",
+    y = "Number of comments"
+  ) +
+  theme_minimal() +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1)
+  )
+```
+
