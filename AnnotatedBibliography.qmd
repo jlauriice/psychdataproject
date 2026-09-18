@@ -1,0 +1,24 @@
+---
+title: "Annotated Bibliography Template"
+author: "Kate Messitte"
+format: 
+  html:
+    toc: true
+    toc-depth: 2
+    embed-resources: true
+bibliography: references.bib
+csl: apa-annotated-bibliography.csl
+---
+
+
+## Overall Summary
+
+Online radicalization is a complex psychological and social process in which extremist attitudes, group identities, and patterns of online engagement can develop and change over time. Research has emphasized the importance of distinguishing extremist attitudes from acceptance of violence, with psychological measures showing that these represent related but distinct aspects of radicalization [@ozer2018]. Other work suggests that factors such as insecure life attachment, deficient life skills, social relationships, and feelings of significance may contribute to greater receptiveness to extremist ideas or violence [@ozer2019; @jasko2017]. More recent research has extended these psychological perspectives to online environments, proposing that exposure, reinforcement, and group integration can interact with psychological vulnerabilities and platform features to create pathways toward stronger extremist beliefs, while emphasizing that these pathways are not necessarily linear or deterministic [@kunst2026]. 
+
+Research specifically on incel communities provides opportunities to examine these processes using large-scale online behavioral data. Golbeck [@golbeck2024] developed a large archive of incel forums and demonstrated how community-specific language can be tracked over time as a potential indicator of changes in radicalization. Studies of incel forum users have also examined patterns of participation and movement between online communities, suggesting that users may have histories of engagement with other extremist or hateful communities before participating in incel forums [@characteristicsincel2023]. Longitudinal research has found that incel users can display anger and incel-specific language early in their participation, raising questions about whether online communities create radicalization or whether individuals with pre-existing grievances and attitudes are more likely to join and remain in these communities [@deroos2024angry]. Other research has examined psychological processes such as significance seeking, self-verification, and identity fusion in incel forums [@rousis2024], while qualitative research has identified fatalism, grievance, identity, and ingroup/outgroup thinking as important themes in how incels construct their worldview [@pettersson2025]. More recent longitudinal work has further examined differences between users who remain active, leave permanently, or return to an incel forum, demonstrating that patterns of language and engagement can change across different forms of participation [@deroos2026].
+
+Research on other extremist online communities provides a useful comparison for understanding which patterns may be specific to incel culture and which may reflect broader processes of online extremism. Research on Stormfront has examined how extremist language and user activity developed over time, finding that these patterns changed across different periods rather than simply becoming continuously more extreme [@kleinberg2021]. Other work has connected engagement with Stormfront to integrative complexity, providing an example of how psychological characteristics can be studied through online language rather than direct psychological surveys [@gregory2021]. Finally, a recent scoping review of empirical incel research brings together findings across research on incel ideology, language, psychosocial characteristics, violence, and radicalization while identifying gaps in longitudinal and psychological research [@rodriguez2025]. Together, these studies provide a foundation for examining online radicalization through both psychological and computational approaches, particularly by using PIRUS to study individual-level radicalization alongside incel and other extremist-community data to investigate how language, identity, engagement, and psychological themes develop over time.
+
+
+## Bibliography
+

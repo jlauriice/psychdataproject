@@ -1,17 +1,20 @@
 ---
 title: "FP1"
 output: html_document
+author: "Kate Messitte"
 ---
 
 # Psych Data project
 
-```{r}
-install.packages("data.table")
-```
-# Research questions: 1. How is repeated exposure to extremist content related to changes in the language and behavior of users over time 2. How do major political or social events affect online indicators associated with radicalization, such as perceived threat, out-group hostility, and engagement with extremist content? 3. Are people who engage with extremist content more likely to move into more extreme online communities over time?
+
+# Research questions:
+1. How is repeated exposure to extremist content related to changes in the language and behavior of users over time
+2. How do major political or social events affect online indicators associated with radicalization, such as perceived threat, out-group hostility, and engagement with extremist content?
+3. Are people who engage with extremist content more likely to move into more extreme online communities over time?
 
 
-## DATASET 1 Incel reddit scrape
+## DATASET 1
+Incel reddit scrape
 
 ```{r}
 library(data.table)
@@ -116,5 +119,50 @@ ggplot(monthly_comments, aes(x = month, y = N)) +
   theme(
     axis.text.x = element_text(angle = 45, hjust = 1)
   )
+```
+
+# DATASET 2 Stormfront posts
+```{r}
+library(readr)
+StormfrontPosts <- read_csv("StormfrontPosts.csv")
+View(StormfrontPosts)
+```
+
+###a)
+The dataset contains posts collected from Stormfront, an online discussion forum associated with white-supremacist and white-nationalist communities. The data were collected for research on online extremist language and behavior. User identities are anonymized in the dataset, so the identifier does not represent users' actual names.
+
+###b)
+The dataset represents people who participated in discussions on the Stormfront forum. Each row represents an individual post or piece of forum content. The dataset measures characteristics of online discussions, including information about the post, the anonymous user who created it, when it was posted, and the content of the post. Because the users are anonymous, the data can be used to examine patterns of participation and language without identifying individual people.
+
+###c)
+One limitation is that the dataset only represents people who participated on Stormfront and should not be treated as representative of all people who hold extremist or white-supremacist beliefs. The users are also anonymous, so there is limited information about their demographic or personal characteristics. For example, the dataset may not provide information about users' age, location, education, or other psychological characteristics. Another limitation is that the dataset measures what people posted online rather than directly measuring their psychological beliefs, attitudes, or behavior. A person's language in an online forum does not necessarily tell us exactly what they believe or what they would do offline. The dataset is also historical, so it may not reflect how extremist communities communicate on the internet today.
+
+###d)
+The dataset includes variables describing the posts and the users who made them. The anonymous user identifier is useful because it allows us to distinguish between users and examine how individual users participate in the forum without knowing their real identities. The post text is particularly useful for a psychology-focused project because it allows researchers to examine language, emotional content, hostility, or other characteristics of communication. The date or timestamp is also useful because it allows us to examine how posting behavior or language changes over time. Other variables describing the post, such as its location within a discussion or its relationship to other posts, can be useful for studying interactions between users and how conversations develop.
+
+###e)
+```{r}
+library(data.table)
+library(ggplot2)
+
+# Load the Stormfront dataset
+StormfrontPosts <- fread("StormfrontPosts.csv")
+
+# Count the number of posts made by each anonymous user
+user_counts <- StormfrontPosts[
+  !is.na(user_id),
+  .N,
+  by = user_id
+]
+
+# Plot the distribution of posts per user
+ggplot(user_counts, aes(x = N)) +
+  geom_histogram(bins = 30) +
+  labs(
+    title = "Distribution of Posts per Stormfront User",
+    x = "Number of posts per user",
+    y = "Number of users"
+  ) +
+  theme_minimal()
 ```
 
