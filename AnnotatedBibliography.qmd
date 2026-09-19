@@ -10,6 +10,8 @@ bibliography: references.bib
 csl: apa-annotated-bibliography.csl
 ---
 
+### AI Statement
+I used AI to help organize my thoughts and improve the flow and clarity of my ideas in the summary. The ideas and content are my own, while AI was used to help with the wording and organization.
 
 ## Overall Summary
 
@@ -21,4 +23,3 @@ Research on other extremist online communities provides a useful comparison for 
 
 
 ## Bibliography
-
