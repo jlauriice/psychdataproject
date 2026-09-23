@@ -1,0 +1,164 @@
+---
+title: "PIRUS"
+output: html_document
+---
+
+```{r}
+# Load libraries
+library(readr)
+library(tidyverse)
+```
+
+
+```{r}
+# Load code
+PIRUSV5 <- read_csv("PIRUSV5.csv")
+View(PIRUSV5)
+```
+
+How is perceived group grievance related to the depth of ideological commitment among people in PIRUS?
+```{r}
+# Clean the data
+grievance_data <- PIRUSV5 %>%
+  filter(
+    Group_Grievance >= 0,
+    Radical_Beliefs >= 0
+  ) %>%
+  mutate(
+    Group_Grievance = factor(
+      Group_Grievance,
+      levels = c(0, 1, 2, 3),
+      labels = c(
+        "No group grievance",
+        "Grievance, no personal connection",
+        "Grievance, personal connection",
+        "Grievance, direct experience"
+      )
+    ),
+    Radical_Beliefs = factor(
+      Radical_Beliefs,
+      levels = 0:5
+    )
+  )
+```
+
+
+```{r}
+# Create the visualization
+ggplot(grievance_data, aes(x = Group_Grievance, fill = Radical_Beliefs)) +
+  geom_bar(position = "fill") +
+  scale_y_continuous(labels = scales::percent) +
+  labs(
+    title = "Group Grievance and Radical Beliefs",
+    x = "Connection to Group Grievance",
+    y = "Percentage of Individuals",
+    fill = "Level of Radical Beliefs"
+  ) +
+  theme_minimal() +
+  theme(
+    axis.text.x = element_text(angle = 25, hjust = 1)
+  )
+
+```
+
+
+
+Is prior traumatic experience associated with how quickly radicalization develops?
+```{r}
+# Clean the data
+trauma_data <- PIRUSV5 %>%
+  filter(
+    Trauma >= 0,
+    Rad_duration >= 0
+  ) %>%
+  mutate(
+    Trauma = factor(
+      Trauma,
+      levels = c(0, 1, 2, 3),
+      labels = c(
+        "No trauma",
+        "Trauma, timing unknown",
+        "Trauma, long before radicalization",
+        "Trauma, shortly before radicalization"
+      )
+    ),
+    Rad_duration = factor(
+      Rad_duration,
+      levels = c(1, 2, 3),
+      labels = c(
+        "Short",
+        "Medium",
+        "Long"
+      )
+    )
+  )
+
+```
+
+```{r}
+# Create the visualization
+ggplot(trauma_data, aes(x = Trauma, fill = Rad_duration)) +
+  geom_bar(position = "fill") +
+  scale_y_continuous(labels = scales::percent) +
+  labs(
+    title = "Trauma and the Duration of Radicalization",
+    x = "Prior Traumatic Experience",
+    y = "Percentage of Individuals",
+    fill = "Radicalization Duration"
+  ) +
+  theme_minimal() +
+  theme(
+    axis.text.x = element_text(angle = 25, hjust = 1)
+  )
+```
+
+
+Is Social media frequency associated with higher level radical behaviors
+
+```{r}
+# Clean the data
+social_media_data <- PIRUSV5 %>%
+  filter(
+    Social_Media_Frequency >= 1,
+    Radical_Behaviors >= 0
+  ) %>%
+  mutate(
+    Social_Media_Frequency = factor(
+      Social_Media_Frequency,
+      levels = 1:5,
+      labels = c(
+        "Rarely",
+        "Sporadically",
+        "Occasionally",
+        "Frequently",
+        "Continually"
+      )
+    ),
+    Radical_Behaviors = factor(
+      Radical_Behaviors,
+      levels = 0:10
+    )
+  )
+```
+
+```{r}
+# Create the visualization
+ggplot(
+  social_media_data,
+  aes(x = Social_Media_Frequency, fill = Radical_Behaviors)
+) +
+  geom_bar(position = "fill") +
+  scale_y_continuous(labels = scales::percent) +
+  labs(
+    title = "Social Media Frequency and Radical Behaviors",
+    x = "Frequency of Social Media Use",
+    y = "Percentage of Individuals",
+    fill = "Level of Radical Behaviors"
+  ) +
+  theme_minimal() +
+  theme(
+    axis.text.x = element_text(angle = 25, hjust = 1)
+  )
+
+```
+
