@@ -16,111 +16,13 @@ PIRUSV5 <- read_csv("PIRUSV5.csv")
 View(PIRUSV5)
 ```
 
-How is perceived group grievance related to the depth of ideological commitment among people in PIRUS?
-```{r}
-# Clean the data
-grievance_data <- PIRUSV5 %>%
+```{r fig.alt="Heatmap showing the percentage of individuals exhibiting operational behaviors (PIRUS categories 9–10) by year of exposure to radicalization and frequency of radicalization-related social media activity. The horizontal axis shows years, and the vertical axis shows five frequency levels: rarely, sporadically, occasionally, frequently, and continually. Each tile represents a year and frequency combination. Lighter yellow indicates a lower percentage, while darker red indicates a higher percentage. The visualization allows comparisons of operational behavior percentages across social media frequency levels and over time."}
+# Prepare the data
+heatmap_data <- PIRUSV5 %>%
   filter(
-    Group_Grievance >= 0,
-    Radical_Beliefs >= 0
-  ) %>%
-  mutate(
-    Group_Grievance = factor(
-      Group_Grievance,
-      levels = c(0, 1, 2, 3),
-      labels = c(
-        "No group grievance",
-        "Grievance, no personal connection",
-        "Grievance, personal connection",
-        "Grievance, direct experience"
-      )
-    ),
-    Radical_Beliefs = factor(
-      Radical_Beliefs,
-      levels = 0:5
-    )
-  )
-```
-
-
-```{r}
-# Create the visualization
-ggplot(grievance_data, aes(x = Group_Grievance, fill = Radical_Beliefs)) +
-  geom_bar(position = "fill") +
-  scale_y_continuous(labels = scales::percent) +
-  labs(
-    title = "Group Grievance and Radical Beliefs",
-    x = "Connection to Group Grievance",
-    y = "Percentage of Individuals",
-    fill = "Level of Radical Beliefs"
-  ) +
-  theme_minimal() +
-  theme(
-    axis.text.x = element_text(angle = 25, hjust = 1)
-  )
-
-```
-
-
-
-Is prior traumatic experience associated with how quickly radicalization develops?
-```{r}
-# Clean the data
-trauma_data <- PIRUSV5 %>%
-  filter(
-    Trauma >= 0,
-    Rad_duration >= 0
-  ) %>%
-  mutate(
-    Trauma = factor(
-      Trauma,
-      levels = c(0, 1, 2, 3),
-      labels = c(
-        "No trauma",
-        "Trauma, timing unknown",
-        "Trauma, long before radicalization",
-        "Trauma, shortly before radicalization"
-      )
-    ),
-    Rad_duration = factor(
-      Rad_duration,
-      levels = c(1, 2, 3),
-      labels = c(
-        "Short",
-        "Medium",
-        "Long"
-      )
-    )
-  )
-
-```
-
-```{r}
-# Create the visualization
-ggplot(trauma_data, aes(x = Trauma, fill = Rad_duration)) +
-  geom_bar(position = "fill") +
-  scale_y_continuous(labels = scales::percent) +
-  labs(
-    title = "Trauma and the Duration of Radicalization",
-    x = "Prior Traumatic Experience",
-    y = "Percentage of Individuals",
-    fill = "Radicalization Duration"
-  ) +
-  theme_minimal() +
-  theme(
-    axis.text.x = element_text(angle = 25, hjust = 1)
-  )
-```
-
-
-Is Social media frequency associated with higher level radical behaviors
-
-```{r}
-# Clean the data
-social_media_data <- PIRUSV5 %>%
-  filter(
-    Social_Media_Frequency >= 1,
-    Radical_Behaviors >= 0
+    Social_Media_Frequency %in% 1:5,
+    Radical_Behaviors %in% 0:10,
+    !is.na(Year_Exposure)
   ) %>%
   mutate(
     Social_Media_Frequency = factor(
@@ -134,31 +36,67 @@ social_media_data <- PIRUSV5 %>%
         "Continually"
       )
     ),
-    Radical_Behaviors = factor(
-      Radical_Behaviors,
-      levels = 0:10
-    )
+    Operational_Behavior = Radical_Behaviors %in% 9:10
   )
-```
 
-```{r}
-# Create the visualization
+# Calculate the percentage exhibiting operational behaviors
+heatmap_summary <- heatmap_data %>%
+  group_by(Year_Exposure, Social_Media_Frequency) %>%
+  summarise(
+    Total = n(),
+    Operational = sum(Operational_Behavior),
+    Percentage = Operational / Total * 100,
+    .groups = "drop"
+  )
+
+# Create the heatmap
 ggplot(
-  social_media_data,
-  aes(x = Social_Media_Frequency, fill = Radical_Behaviors)
-) +
-  geom_bar(position = "fill") +
-  scale_y_continuous(labels = scales::percent) +
-  labs(
-    title = "Social Media Frequency and Radical Behaviors",
-    x = "Frequency of Social Media Use",
-    y = "Percentage of Individuals",
-    fill = "Level of Radical Behaviors"
-  ) +
-  theme_minimal() +
-  theme(
-    axis.text.x = element_text(angle = 25, hjust = 1)
+  heatmap_summary,
+  aes(
+    x = Year_Exposure,
+    y = Social_Media_Frequency,
+    fill = Percentage
   )
-
+) +
+  geom_tile(color = "white", linewidth = 0.2) +
+  scale_fill_gradient(
+    low = "lightyellow",
+    high = "darkred",
+    labels = function(x) paste0(round(x), "%"),
+    name = "Operational\nBehaviors (%)"
+  ) +
+  scale_x_continuous(
+    breaks = pretty_breaks(n = 10)
+  ) +
+  labs(
+  title = "Social Media Frequency and\nOperational Involvement Over Time",
+  subtitle = "Percentage exhibiting operational behaviors by year and social media frequency",
+  x = "Year of Exposure to Radicalization",
+  y = "Frequency of Social Media Activity",
+  caption = paste(
+  "Source: PIRUS V5.",
+  "\nOperational behaviors are defined as categories 9–10.",
+  "\nUnknown and not-applicable values excluded."
+)
+) +
+theme_minimal(base_size = 13) +
+theme(
+  plot.title = element_text(
+    face = "bold",
+    size = 16,
+    lineheight = 1.2
+  ),
+  plot.subtitle = element_text(size = 11),
+  plot.margin = margin(t = 15, r = 15, b = 10, l = 15),
+  panel.grid = element_blank(),
+  axis.text.x = element_text(angle = 45, hjust = 1)
+)
 ```
 
+
+## NARRATIVE
+This visualization explores the relationship between social media activity and operational involvement among individuals included in the PIRUS V5 dataset. Specifically, it asks: How does the frequency of social media activity relate to the percentage of individuals exhibiting operational behaviors, and how does this relationship change over time? This question is important for understanding how online activity may intersect with different levels of involvement in radicalization.
+
+The heatmap displays the percentage of individuals exhibiting operational behaviors (categories 9–10) across years of exposure to radicalization and five levels of social media activity: rarely, sporadically, occasionally, frequently, and continually. Each cell represents a year and activity-frequency combination. The color scale ranges from pale yellow, indicating a lower percentage, to dark red, indicating a higher percentage. Blank cells represent combinations for which no data are displayed. Unknown and not-applicable values are excluded from the analysis.
+
+The visualization shows substantial variation in operational behavior percentages across both time and social media frequency. Some year-frequency combinations show high percentages, while others show lower percentages, and the pattern does not follow a consistent upward or downward trend. However, these percentages should be interpreted cautiously because the number of individuals represented in each cell may vary. The heatmap shows an association between social media frequency and operational involvement within this dataset, but it does not establish that more frequent social media activity causes greater operational involvement.

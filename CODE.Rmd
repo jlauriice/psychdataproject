@@ -1,0 +1,140 @@
+---
+title: "CODE"
+output: html_document
+---
+
+```{r}
+incels <- fread(
+  "~/Downloads/incels.is_AllComments.anon",
+  sep = "\t"
+)
+```
+
+```{r}
+setnames(
+  incels,
+  old = "924978982.463397",
+  new = "user"
+)
+```
+
+```{r}
+incel_clean <- incels[
+  !is.na(text) & trimws(text) != ""
+]
+```
+
+
+```{r}
+# Inspect the dataset
+glimpse(incel_clean)
+
+# Check the number of rows and columns
+dim(incel_clean)
+
+# See the column names
+names(incel_clean)
+
+# Preview the first few rows
+head(incel_clean, 5)
+```
+
+```{r}
+library(tidyverse)
+library(lubridate)
+
+# Create a date variable from the Unix timestamp
+incel_clean <- incel_clean %>%
+  mutate(
+    date = as.Date(as.POSIXct(timestamp, origin = "1970-01-01", tz = "UTC")),
+    month = floor_date(date, unit = "month")
+  )
+
+# Check the date range
+range(incel_clean$date, na.rm = TRUE)
+
+# Check the number of comments per month
+incel_clean %>%
+  count(month, sort = FALSE) %>%
+  print(n = 20)
+```
+```{r}
+# Define the new set of lexicon terms
+lexicon_terms <- c(
+  "Chad" = "\\bchad\\b",
+  "Cuck" = "\\bcuck\\b",
+  "Truecel" = "\\btruecel\\b",
+  "LDAR" = "\\bldar\\b",
+  "Betabuxx" = "\\bbetabuxx\\b",
+  "Mogger" = "\\bmogger\\b"
+)
+
+# Count total comments per month
+monthly_totals <- incel_clean %>%
+  filter(!is.na(month)) %>%
+  count(month, name = "Total_Comments")
+
+# Count comments containing each term by month
+term_trends <- map_dfr(names(lexicon_terms), function(term) {
+
+  pattern <- lexicon_terms[[term]]
+
+  incel_clean %>%
+    filter(!is.na(month)) %>%
+    group_by(month) %>%
+    summarise(
+      Term_Count = sum(
+        str_detect(
+          coalesce(text, ""),
+          regex(pattern, ignore_case = TRUE)
+        ),
+        na.rm = TRUE
+      ),
+      .groups = "drop"
+    ) %>%
+    mutate(Term = term)
+})
+
+# Calculate the percentage of comments containing each term
+term_trends <- term_trends %>%
+  left_join(monthly_totals, by = "month") %>%
+  mutate(
+    Percentage = Term_Count / Total_Comments * 100
+  )
+
+# Set the order of the terms in the legend
+term_trends$Term <- factor(
+  term_trends$Term,
+  levels = names(lexicon_terms)
+)
+
+# Create the visualization
+ggplot(
+  term_trends,
+  aes(
+    x = month,
+    y = Percentage,
+    color = Term
+  )
+) +
+  geom_line(linewidth = 1) +
+  labs(
+    title = "The Evolution of Incel Language, 2017–2023",
+    subtitle = "Monthly percentage of comments containing selected lexicon terms",
+    x = "Month",
+    y = "Comments Containing Term (%)",
+    color = "Lexicon Term",
+    caption = paste(
+      "Source: Incels.is comment dataset and Appendix A: Incel Lexicon.",
+      "Each line represents the percentage of monthly comments containing a term."
+    )
+  ) +
+  theme_minimal(base_size = 13) +
+  theme(
+    plot.title = element_text(face = "bold", size = 16),
+    plot.subtitle = element_text(size = 11),
+    panel.grid.minor = element_blank(),
+    legend.position = "bottom"
+  )
+```
+
