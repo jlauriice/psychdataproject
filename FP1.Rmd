@@ -165,4 +165,3 @@ ggplot(user_counts, aes(x = N)) +
   ) +
   theme_minimal()
 ```
-

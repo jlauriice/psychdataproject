@@ -2,6 +2,10 @@
 title: "CODE"
 output: html_document
 ---
+```{r}
+library(data.table)
+```
+
 
 ```{r}
 incels <- fread(
@@ -136,5 +140,430 @@ ggplot(
     panel.grid.minor = element_blank(),
     legend.position = "bottom"
   )
+```
+
+```{r}
+library(tidyverse)
+library(stringr)
+
+# Candidate phrases to investigate
+candidate_terms <- c(
+  "I want to" = "\\bi want to\\b",
+  "I'm going to" = "\\bi['’]?m going to\\b",
+  "I will" = "\\bi will\\b",
+  "planning to" = "\\bplanning to\\b",
+  "my plan" = "\\bmy plan\\b",
+  "take action" = "\\btake action\\b",
+  "make them pay" = "\\bmake them pay\\b",
+  "get revenge" = "\\bget revenge\\b",
+  "kill them" = "\\bkill them\\b",
+  "shoot up" = "\\bshoot up\\b",
+  "carry out an attack" = "\\bcarry out an attack\\b",
+  "buy a gun" = "\\bbuy a gun\\b",
+  "get a weapon" = "\\bget a weapon\\b"
+)
+```
+
+```{r}
+# Count matching comments for each phrase
+candidate_counts <- map_dfr(
+  names(candidate_terms),
+  function(term) {
+    pattern <- candidate_terms[[term]]
+
+    tibble(
+      Term = term,
+      Comment_Count = sum(
+        str_detect(
+          coalesce(incel_clean$text, ""),
+          regex(pattern, ignore_case = TRUE)
+        ),
+        na.rm = TRUE
+      )
+    )
+  }
+) %>%
+  arrange(desc(Comment_Count))
+
+candidate_counts
+```
+```{r}
+candidate_examples <- map_dfr(
+  names(candidate_terms),
+  function(term) {
+
+    pattern <- candidate_terms[[term]]
+
+    matches <- incel_clean %>%
+      filter(
+        str_detect(
+          coalesce(text, ""),
+          regex(pattern, ignore_case = TRUE)
+        )
+      )
+
+    matches %>%
+      slice_sample(n = min(20, nrow(matches))) %>%
+      select(user, date, text) %>%
+      mutate(Term = term)
+  }
+)
+
+View(candidate_examples)
+```
+
+```{r}
+priority_examples <- candidate_examples %>%
+  filter(Term %in% c(
+    "buy a gun",
+    "shoot up",
+    "kill them",
+    "get revenge"
+  )) %>%
+  select(Term, date, text)
+
+View(priority_examples)
+```
+
+```{r}
+review_sheet <- candidate_examples %>%
+  filter(Term %in% c(
+    "buy a gun",
+    "shoot up",
+    "kill them",
+    "get revenge"
+  )) %>%
+  select(Term, date, text) %>%
+  mutate(
+    Label = "",
+    Notes = ""
+  )
+
+View(review_sheet)
+```
+
+```{r}
+library(DT)
+
+datatable(
+  review_sheet,
+  editable = list(
+    target = "cell",
+    disable = list(columns = c(0, 1, 2))
+  ),
+  options = list(
+    pageLength = 10,
+    scrollX = TRUE
+  )
+)
+```
+```{r}
+write.csv(
+  review_sheet,
+  "~/Downloads/action_review_sheet.csv",
+  row.names = FALSE
+)
+```
+
+```{r}
+library(tidyverse)
+
+# Prepare the candidate examples for manual review
+candidate_review_sheet <- candidate_examples %>%
+  distinct(text, .keep_all = TRUE) %>%  # Remove duplicate comments
+  select(Term, date, user, text) %>%
+  mutate(
+    Label = "",
+    Notes = ""
+  ) %>%
+  relocate(Label, Notes, .after = text)
+
+# Export to CSV
+write.csv(
+  candidate_review_sheet,
+  "~/Downloads/candidate_examples_review_sheet.csv",
+  row.names = FALSE,
+  na = ""
+)
+
+# Check how many comments were exported
+nrow(candidate_review_sheet)
+```
+
+```{r}
+
+# Load packages
+library(dplyr)
+library(stringr)
+library(readr)
+
+# Start with the original Reddit scrape
+# Assumes your original dataset is called `incels`
+
+# Define keyword groups for different mental health topics
+mental_health_terms <- list(
+
+  mental_health = paste0(
+    "\\bmental health\\b|\\bmental illness\\b|",
+    "\\bmentally ill\\b|\\bpsychological\\b|",
+    "\\bpsychiatric\\b"
+  ),
+
+  depression_anxiety = paste0(
+    "\\bdepress(?:ion|ed|ing|ive)?\\b|",
+    "\\banxiet(?:y|ies|ious)\\b|",
+    "\\bpanic attack\\b|\\bpanic disorder\\b|",
+    "\\bbipolar\\b|\\bptsd\\b|",
+    "\\btrauma\\b|\\btraumatized\\b"
+  ),
+
+  seeking_help = paste0(
+    "\\bseek(?:ing)? help\\b|\\bget help\\b|",
+    "\\bneed help\\b|\\bask for help\\b|",
+    "\\breach out\\b|\\btalk to someone\\b|",
+    "\\bprofessional help\\b|\\bmental health support\\b"
+  ),
+
+  therapy_and_treatment = paste0(
+    "\\btherap(?:y|ist|ists|ies|eutic)\\b|",
+    "\\bcounsel(?:ing|ling|or|lor)\\b|",
+    "\\bpsychiatrist\\b|\\bpsychologist\\b|",
+    "\\bmedication\\b|\\bantidepressants?\\b|",
+    "\\bssri\\b|\\btreatment\\b"
+  ),
+
+  social_support = paste0(
+    "\\bsupport group\\b|\\bvent(?:ing)?\\b|",
+    "\\bconfide\\b|\\bopen up\\b|",
+    "\\bfriends to talk to\\b|\\bfamily support\\b|",
+    "\\bfeel alone\\b|\\bloneliness\\b|",
+    "\\bno one to talk to\\b"
+  ),
+
+  coping_and_improvement = paste0(
+    "\\bcope\\b|\\bcoping\\b|\\bself[- ]care\\b|",
+    "\\bmanage my emotions\\b|\\bfeel better\\b|",
+    "\\bimprove my mental health\\b|",
+    "\\bchange my mindset\\b|\\bbuild confidence\\b|",
+    "\\bself[- ]improvement\\b"
+  ),
+
+  suicide_and_self_harm = paste0(
+    "\\bsuicid(?:e|al)\\b|\\bkill myself\\b|",
+    "\\bend my life\\b|\\bself[- ]harm\\b|",
+    "\\bself[- ]injur(?:y|e|ing)\\b|",
+    "\\bwant to die\\b|\\bthoughts of dying\\b"
+  )
+)
+
+# Create a searchable version of the comment text
+incels_with_topics <- incels %>%
+  filter(!is.na(text), str_trim(text) != "") %>%
+  mutate(text_search = str_to_lower(text))
+
+# Flag each topic separately
+for (topic in names(mental_health_terms)) {
+  incels_with_topics[[paste0("mh_", topic)]] <-
+    str_detect(
+      incels_with_topics$text_search,
+      regex(mental_health_terms[[topic]], ignore_case = TRUE)
+    )
+}
+
+# Keep comments matching at least one topic
+mental_health_subset <- incels_with_topics %>%
+  filter(if_any(starts_with("mh_"), ~ .x)) %>%
+  mutate(
+    Mental_Health_Topics = apply(
+      select(., starts_with("mh_")),
+      1,
+      function(x) {
+        matched <- names(x)[as.logical(x)]
+        paste(
+          str_remove(matched, "^mh_"),
+          collapse = "; "
+        )
+      }
+    )
+  ) %>%
+  select(-text_search)
+
+# Check the results
+nrow(mental_health_subset)
+
+mental_health_subset %>%
+  summarise(
+    across(
+      starts_with("mh_"),
+      ~ sum(.x, na.rm = TRUE)
+    )
+  )
+
+# Save the subset as a CSV file
+write.csv(
+  mental_health_subset,
+  "~/Downloads/mental_health_subset.csv",
+  row.names = FALSE,
+  na = ""
+)
+```
+
+```{r}
+library(readr)
+candidate_examples_labeled <- read_csv("candidate_examples_labeled(Labeled Comments) (1).csv")
+View(candidate_examples_labeled)
+```
+
+
+```{r}
+# Create a filtered dataset for analysis
+candidate_analysis <- candidate_examples_labeled %>%
+  filter(
+    !is.na(Label),
+    Label != "",
+    Label != "Unclear or unrelated"
+  ) %>%
+  mutate(
+    Label = factor(
+      Label,
+      levels = c(
+        "Specific action or planning",
+        "Advocacy or encouragement",
+        "General violent rhetoric",
+        "Hypothetical, joke, or quotation",
+        "Self-harm related"
+      )
+    )
+  )
+
+# Check how many comments remain
+nrow(candidate_analysis)
+
+# Check the remaining label distribution
+candidate_analysis %>%
+  count(Label, sort = TRUE)
+```
+
+
+```{r}
+
+library(tidyverse)
+library(lubridate)
+
+# Check the dataset
+glimpse(candidate_analysis)
+
+# Number of comments in each label category
+label_summary <- candidate_analysis %>%
+  filter(!is.na(Label), Label != "") %>%
+  count(Label, sort = TRUE) %>%
+  mutate(Percent = round(n / sum(n) * 100, 1))
+
+print(label_summary)
+
+# Visualize the distribution
+ggplot(label_summary, aes(x = reorder(Label, n), y = n)) +
+  geom_col() +
+  coord_flip() +
+  labs(
+    title = "Distribution of Action-Oriented Comment Types",
+    x = NULL,
+    y = "Number of comments"
+  ) +
+  theme_minimal()
+```
+
+```{r}
+
+# Count comments by phrase and label
+term_label_counts <- candidate_analysis %>%
+  filter(!is.na(Label), Label != "") %>%
+  count(Term, Label)
+
+# Calculate the label distribution within each phrase
+term_label_percent <- term_label_counts %>%
+  group_by(Term) %>%
+  mutate(Percent = n / sum(n) * 100) %>%
+  ungroup()
+
+print(term_label_percent)
+
+# Plot the distribution for each phrase
+ggplot(
+  term_label_percent,
+  aes(x = Term, y = Percent, fill = Label)
+) +
+  geom_col() +
+  coord_flip() +
+  labs(
+    title = "Types of Language Associated With Each Phrase",
+    x = NULL,
+    y = "Percentage of sampled comments",
+    fill = "Comment label"
+  ) +
+  theme_minimal()
+```
+
+```{r}
+
+# Convert dates and group by month and label
+monthly_labels <- candidate_analysis %>%
+  filter(!is.na(Label), Label != "") %>%
+  mutate(
+    date = as.Date(date),
+    month = floor_date(date, unit = "month")
+  ) %>%
+  filter(!is.na(month)) %>%
+  count(month, Label) %>%
+  group_by(month) %>%
+  mutate(Percent = n / sum(n) * 100) %>%
+  ungroup()
+
+# Plot category proportions over time
+ggplot(
+  monthly_labels,
+  aes(x = month, y = Percent, color = Label)
+) +
+  geom_line(linewidth = 0.8) +
+  labs(
+    title = "Action-Oriented Comment Categories Over Time",
+    x = "Month",
+    y = "Percentage of sampled comments",
+    color = "Comment label"
+  ) +
+  theme_minimal()
+```
+
+```{r}
+
+# Number of distinct users represented in each category
+users_by_label <- candidate_analysis %>%
+  filter(
+    !is.na(Label), Label != "",
+    !is.na(user), user != ""
+  ) %>%
+  group_by(Label) %>%
+  summarise(
+    Comments = n(),
+    Distinct_users = n_distinct(user),
+    .groups = "drop"
+  )
+
+print(users_by_label)
+
+# How many different labels are represented for each user?
+user_label_diversity <- candidate_analysis %>%
+  filter(
+    !is.na(Label), Label != "",
+    !is.na(user), user != ""
+  ) %>%
+  group_by(user) %>%
+  summarise(
+    Number_of_sampled_comments = n(),
+    Number_of_label_categories = n_distinct(Label),
+    .groups = "drop"
+  )
+
+summary(user_label_diversity)
 ```
 
