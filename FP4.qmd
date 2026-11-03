@@ -409,6 +409,70 @@ The forum data are observational and may contain sarcasm, slang, quoted text, an
 ## 9. Plan for the remainder of the semester
 
 
+### 1. Complete and Validate the Classification
+
+**Responsible:** Kate  
+**Target date:** November 10, 2026
+
+- Apply the refined nine-category codebook to the remaining incels.is comments.
+- Manually review a random sample of at least 100 classified comments to evaluate the accuracy of the assigned labels.
+- Identify categories that are frequently confused and make final adjustments to the codebook.
+- Save the final classified dataset with comment IDs, dates, and assigned categories.
+
+**Deliverable:** A classified dataset, finalized codebook, and summary of classification accuracy and limitations.
+
+### 2. Analyze Changes in Online Discourse Over Time
+
+**Responsible:** Kate  
+**Target date:** November 17, 2026
+
+- Group classified comments by year from 2017 to 2023.
+- Calculate the proportion of comments assigned to each category for each year.
+- Create line graphs showing changes in action-oriented language over time.
+- Compare trends in action-oriented language with trends in grievance, hopelessness, and other categories.
+
+**Deliverable:** At least two visualizations showing changes in language over time, with brief written interpretations.
+
+### 3. Investigate Psychological Factors Associated With Action-Oriented Language
+
+**Responsible:** Kate and Laurice
+**Target date:** November 24, 2026
+
+- Identify comments classified as expressing grievance, hopelessness, or mental health-related concerns.
+- Calculate how frequently these categories appear alongside action-oriented language.
+- Create a co-occurrence heatmap or grouped bar chart to visualize relationships between categories.
+- Examine whether certain combinations of language appear more frequently in comments containing action-oriented content.
+
+**Deliverable:** A table and visualization showing relationships between categories, along with an interpretation of the findings.
+
+### 4. Integrate Findings From PIRUS and Online Discourse
+
+**Responsible:** Kate and Laurice  
+**Target date:** December 1, 2026
+
+- Laurice will finalize the analysis of the PIRUS incel-related subset, focusing on ideological affiliations and available individual-level characteristics.
+- Summarize relevant demographic, ideological, and radicalization-related variables in PIRUS.
+- Compare themes identified in the online discourse analysis with patterns observed in PIRUS.
+- Identify similarities and differences between online expressions of grievance or action-oriented language and documented radicalization pathways.
+
+**Deliverable:** A comparative analysis with at least one PIRUS summary table or visualization and a written discussion connecting findings from both datasets.
+
+**Potential challenge:** The two datasets represent different populations and units of analysis. We cannot directly link individual forum users to PIRUS cases or assume that online language predicts real-world violence.
+
+### 5. Identify Potential Intervention Opportunities and Finalize the Project
+
+**Responsible:** Kate and Laurice  
+**Target date:** December 8, 2026
+
+- Summarize the most important findings from both datasets.
+- Identify recurring patterns that may be relevant to understanding vulnerability to radicalization, including grievance, hopelessness, and action-oriented language.
+- Discuss how these findings might inform supportive interventions or future research.
+- Address ethical concerns, including false positives, privacy, and the distinction between expressions of distress and indications of violent intent.
+- Complete the final visualizations, written analysis, and reproducible Quarto report.
+
+**Deliverable:** A completed final report containing research questions, methodology, results, visualizations, limitations, and implications for future research and prevention.
+
+
 
 ## 10. Contributions to FP4
 
