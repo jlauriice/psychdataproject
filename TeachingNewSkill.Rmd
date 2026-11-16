@@ -1,5 +1,4 @@
 ---
-title: "Teaching New Skill"
 output: html_document
 ---
 
@@ -178,3 +177,173 @@ The words with the longest bars have the highest TF-IDF scores within that book.
 Look at how the words differ across books. Some words might be character names, while others might relate to specific topics or settings.
 
 Remember that a high score does not automatically mean a word is important to the overall meaning of a book. It means that the word is relatively distinctive within our collection.
+
+
+## Your Turn: TF-IDF on Your Own Topics
+
+Now it's your turn! Instead of Jane Austen, you will build a tiny dataset about three topics you care about and find the most distinctive words for each one.
+
+The chunk below is set up so you only need to edit the first part. Change the three topic names and replace the text with a few sentences of your own. You could write about hobbies, classes, favorite shows, cities, anything!
+
+A tip before you start: write at least three or four sentences per topic, and let your key words show up more than once. TF-IDF needs some repetition to work with.
+
+```{r}
+# STEP 1: Create your dataset (edit this part!)
+# Change the topic names and replace the text with your own writing.
+my_texts <- tibble(
+  topic = c("Soccer", "Cooking", "Space"),
+  text = c(
+    # Text for topic 1
+    "The striker scored a goal in the final minute of the match.
+     The goalkeeper could not reach the ball, and the crowd cheered
+     as the team won the match. Every player on the team trained
+     hard all season to win the league.",
+
+    # Text for topic 2
+    "Chop the onion and garlic, then heat oil in a pan. Add the onion
+     and garlic to the pan and stir until soft. Season the sauce with
+     salt and pepper, then let the sauce simmer before serving.",
+
+    # Text for topic 3
+    "The rocket launched into orbit carrying a telescope. The telescope
+     will study distant galaxies and planets far beyond our moon.
+     Astronauts on the rocket tracked the orbit as the planets
+     came into view."
+  )
+)
+
+# STEP 2: Break the text into individual words
+my_words <- my_texts %>%
+  unnest_tokens(word, text)
+
+# STEP 3: Remove common stop words
+my_words <- my_words %>%
+  anti_join(stop_words, by = "word")
+
+# STEP 4: Count each word in each topic and calculate TF-IDF
+my_tfidf <- my_words %>%
+  count(topic, word, sort = TRUE) %>%
+  bind_tf_idf(word, topic, n)
+
+# STEP 5: Find the 5 most distinctive words for each topic
+my_top_words <- my_tfidf %>%
+  group_by(topic) %>%
+  slice_max(tf_idf, n = 5, with_ties = FALSE) %>%
+  ungroup()
+
+my_top_words
+```
+
+Let's plot the results, just like we did with the Austen books.
+
+```{r}
+ggplot(my_top_words, aes(
+  x = reorder_within(word, tf_idf, topic),
+  y = tf_idf,
+  fill = topic
+)) +
+  geom_col(show.legend = FALSE) +
+  facet_wrap(~topic, scales = "free") +
+  coord_flip() +
+  scale_x_reordered() +
+  labs(
+    title = "Most Distinctive Words in My Topics",
+    x = "Word",
+    y = "TF-IDF Score"
+  ) +
+  theme_minimal()
+```
+
+### Check your understanding
+
+- Do the top words match what you would have guessed for each topic? Did anything surprise you?
+- Try adding the same word to all three of your texts and rerun the chunk. What happens to its TF-IDF score, and why?
+- In the example text, "season" appears in both the soccer and cooking topics. Look at its `idf` value in `my_tfidf`. How does it compare to a word that appears in only one topic?
+
+If your top 5 words make sense for your three topics, you're done with the main tutorial. Nice work!
+
+## Optional Advanced Task: Distinctive Phrases with Bigrams
+
+Finished early or feeling curious? Let's take TF-IDF one step further.
+
+So far, we have treated every word on its own. But sometimes meaning lives in pairs of words. "Captain" tells us a little, but "captain wentworth" tells us a lot more!
+
+A pair of neighboring words is called a bigram. In this task, we will tokenize the Austen books into bigrams instead of single words and then calculate TF-IDF exactly the way we did before.
+
+### Step 1: Tokenize into bigrams
+
+We use the same `unnest_tokens()` function, but this time we tell it to create n-grams of length 2.
+
+```{r}
+# Break the books into bigrams (pairs of neighboring words)
+book_bigrams <- books %>%
+  unnest_tokens(bigram, text, token = "ngrams", n = 2) %>%
+  filter(!is.na(bigram))
+
+# View the results
+head(book_bigrams)
+```
+
+### Step 2: Remove stop words
+
+This part is a little trickier than before. A bigram like "of the" is not very interesting, so we want to drop any bigram where either word is a stop word.
+
+To do that, we split each bigram into two columns, filter both, and then glue them back together.
+
+```{r}
+book_bigrams <- book_bigrams %>%
+  # Split each bigram into its two words
+  separate(bigram, c("word1", "word2"), sep = " ") %>%
+  # Keep only bigrams where neither word is a stop word
+  filter(
+    !word1 %in% stop_words$word,
+    !word2 %in% stop_words$word
+  ) %>%
+  # Glue the two words back together
+  unite(bigram, word1, word2, sep = " ")
+```
+
+### Step 3: Count and calculate TF-IDF
+
+This should look familiar! The only difference is that our "term" is now a bigram instead of a word.
+
+```{r}
+bigram_tfidf <- book_bigrams %>%
+  count(book, bigram, sort = TRUE) %>%
+  bind_tf_idf(bigram, book, n)
+
+# Find the top 8 bigrams for each book
+top_bigrams <- bigram_tfidf %>%
+  group_by(book) %>%
+  slice_max(tf_idf, n = 8, with_ties = FALSE) %>%
+  ungroup()
+```
+
+### Step 4: Visualize
+
+```{r}
+ggplot(top_bigrams, aes(
+  x = reorder_within(bigram, tf_idf, book),
+  y = tf_idf,
+  fill = book
+)) +
+  geom_col(show.legend = FALSE) +
+  facet_wrap(~book, scales = "free") +
+  coord_flip() +
+  scale_x_reordered() +
+  scale_fill_brewer(palette = "Set2") +
+  labs(
+    title = "Most Distinctive Bigrams Across Jane Austen's Books",
+    x = "Bigram",
+    y = "TF-IDF Score"
+  ) +
+  theme_minimal()
+```
+
+### Explore on your own
+
+Compare this plot to the single-word plot from earlier, then pick one or more of these to try:
+
+- Which plot tells you more about each book? What do the bigrams reveal that single words did not?
+- Change `n = 2` to `n = 3` to create trigrams. You will need a `word3` column in the `separate()` and `filter()` steps. Do the results get more interesting or less?
+- Go back to your own three topics from the "Your Turn" section and try bigrams there. You will probably see lots of ties. Why do you think bigrams need more text than single words to work well?
