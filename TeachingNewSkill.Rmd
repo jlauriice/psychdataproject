@@ -1,0 +1,180 @@
+---
+title: "Teaching New Skill"
+output: html_document
+---
+
+# Finding Important Words with TF-IDF in R
+
+## Introduction
+
+Have you ever wondered how a computer can figure out what a document is actually about? One way to approach this is by looking at the words used in a document and how often they appear.
+
+However, simply counting words does not always tell us much. For example, words like "the," "and," or "is" might appear hundreds of times, but they don't necessarily tell us anything about the subject of a document.
+
+This is where TF-IDF comes in!
+
+TF-IDF stands for Term Frequency-Inverse Document Frequency. It is a technique used in text analysis to identify words that are important to a particular document compared to a larger collection
+of documents.
+
+In this tutorial, we will use R and the tidytext package to calculate TF-IDF scores and explore which words are most distinctive across different books.
+
+By the end, you will be able to apply this technique to your own text data.
+
+## What is TF-IDF?
+
+TF-IDF combines two measurements:
+
+**1. Term Frequency (TF)**
+
+This measures how frequently a word appears in a particular document. A word that appears more often in a document generally has a higher term frequency.
+
+**2. Inverse Document Frequency (IDF)**
+
+This measures how uncommon a word is across the entire collection of documents.
+
+If a word appears in almost every document, it has a lower IDF score.
+If it appears in only a few documents, it has a higher IDF score.
+
+**Putting them together:**
+
+TF-IDF multiplies these two measurements.
+
+A word receives a high TF-IDF score when it appears frequently in one document but is relatively uncommon across the other documents.
+
+For example, the word "Elizabeth" might be especially distinctive in Pride and Prejudice, while another character's name might be more distinctive in a different book.
+
+The goal is not necessarily to find the most common words. It is to find words that help distinguish one document from another.
+
+```{r}
+library(tidytext)
+library(tidyverse)
+library(janeaustenr)
+```
+
+We will be using three packages:
+
+- tidytext: Helps us organize and analyze text data.
+- tidyverse: Provides tools for cleaning, organizing, and visualizing data.
+- janeaustenr: Provides a collection of Jane Austen's books that we
+  can use as our example dataset.
+
+Let's start by loading our data!
+
+```{r}
+# Load the Jane Austen books
+books <- austen_books()
+
+# Look at the first few rows
+head(books)
+
+# See how many books are included
+unique(books$book)
+```
+Our dataset contains the text of several Jane Austen novels.
+
+Each row contains a portion of a book's text, and the book column
+identifies which novel that text belongs to.
+
+For our purposes, we will treat each entire book as one document.
+
+Before we can calculate TF-IDF, we need to break the text into
+individual words.
+
+### What is tokenization?
+
+Tokenization is the process of breaking text into smaller pieces,
+which are called tokens.
+
+For this tutorial, we will break our text into individual words.
+
+We will also remove common words like "the," "and," and "is."
+These words are called stop words. They are usually not very useful
+for identifying what makes one document different from another.
+
+```{r}
+# Break the books into individual words
+book_words <- books %>%
+  unnest_tokens(word, text)
+
+# Remove common stop words
+book_words <- book_words %>%
+  anti_join(stop_words, by = "word")
+
+# Count each word in each book
+book_words <- book_words %>%
+  count(book, word, sort = TRUE)
+
+# View the results
+head(book_words)
+```
+## Calculating TF-IDF
+
+Now that our text is cleaned and organized, we can calculate TF-IDF.
+
+Luckily, the tidytext package has a function called `bind_tf_idf()`
+that does most of the work for us.
+
+The function needs three pieces of information:
+
+1. The term (our word).
+2. The document (our book).
+3. The number of times the term appears in the document.
+
+Let's calculate it!
+
+```{r}
+book_words_tfidf <- book_words %>%
+  bind_tf_idf(word, book, n)
+
+# View our new results
+head(book_words_tfidf)
+```
+
+```{r}
+# Find the words with the highest TF-IDF scores
+book_words_tfidf %>%
+  arrange(desc(tf_idf)) %>%
+  head(15)
+```
+
+Notice that the words with the highest TF-IDF scores are not necessarily the words that appear most frequently overall.
+
+Instead, these words are relatively distinctive to particular books.
+
+This is the main idea behind TF-IDF!
+
+Let's make this easier to understand by visualizing our results.
+
+```{r}
+# Find the top 8 words for each book
+top_words <- book_words_tfidf %>%
+  group_by(book) %>%
+  slice_max(tf_idf, n = 8, with_ties = FALSE) %>%
+  ungroup()
+
+# Create a visualization
+ggplot(top_words, aes(
+  x = reorder_within(word, tf_idf, book),
+  y = tf_idf,
+  fill = book
+)) +
+  geom_col(show.legend = FALSE) +
+  facet_wrap(~book, scales = "free") +
+  coord_flip() +
+  scale_x_reordered() +
+  scale_fill_brewer(palette = "Set2") +
+  labs(
+    title = "Most Distinctive Words Across Jane Austen's Books",
+    x = "Word",
+    y = "TF-IDF Score"
+  ) +
+  theme_minimal()
+```
+
+Each panel represents a different book.
+
+The words with the longest bars have the highest TF-IDF scores within that book.
+
+Look at how the words differ across books. Some words might be character names, while others might relate to specific topics or settings.
+
+Remember that a high score does not automatically mean a word is important to the overall meaning of a book. It means that the word is relatively distinctive within our collection.
